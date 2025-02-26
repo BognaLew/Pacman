@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"image/color"
+	"math/rand"
 
 	"github.com/BognaLew/Pacman/maps"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -75,8 +76,9 @@ func (board *Board) Draw(screen *ebiten.Image) {
 	}
 }
 
-func (board *Board) parseBoard(boardTemplate [][]uint8) {
+func (board *Board) parseBoard(boardTemplate [][]uint8) []*Dot {
 	tiles := make([][]*Tile, 0)
+	dots := make([]*Dot, 0)
 
 	for yIdx, row := range boardTemplate {
 		tilesInRow := make([]*Tile, 0)
@@ -85,6 +87,7 @@ func (board *Board) parseBoard(boardTemplate [][]uint8) {
 			switch item {
 			case 0:
 				tilesInRow = append(tilesInRow, NewTile(NONE, position, PathColor))
+				dots = append(dots, NewDot(*position.Multiply(TileSize)))
 			case 1:
 				tilesInRow = append(tilesInRow, NewTile(WALL, position, WallColor))
 			case 2:
@@ -102,10 +105,21 @@ func (board *Board) parseBoard(boardTemplate [][]uint8) {
 	}
 
 	board.tiles = tiles
+	return dots
 }
 
-func (board *Board) PrepareBoard() {
-	board.parseBoard(maps.LoadMap1())
+func (board *Board) PrepareBoard() []*Dot {
+	dots := board.parseBoard(maps.LoadMap1())
+	numOfBigDots, numOfDots := 4, len(dots)
+	for numOfBigDots != 0 {
+		idx := rand.Intn(numOfDots)
+		if !dots[idx].bigDot {
+			dots[idx].SetBigDot()
+			numOfBigDots -= 1
+		}
+	}
+
+	return dots
 }
 
 func (board Board) GetTileTypeAtPosition(position Vector) TileType {

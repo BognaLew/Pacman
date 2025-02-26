@@ -15,6 +15,7 @@ type Game struct {
 
 	player *Player
 	ghost  *Ghost
+	dots   []*Dot
 
 	gameOver bool
 	count    int
@@ -22,11 +23,12 @@ type Game struct {
 
 func NewGame() *Game {
 	board := NewBoard()
-	board.PrepareBoard()
+	dots := board.PrepareBoard()
 	game := &Game{
 		board:    board,
 		player:   NewPlayer(*board.pacmanSpawn.position.Multiply(32)),
 		ghost:    NewGhost(board.ghostSpawnPositions[0], assets.BlinkyImage),
+		dots:     dots,
 		gameOver: false,
 		count:    0,
 	}
@@ -35,26 +37,37 @@ func NewGame() *Game {
 }
 
 func (game *Game) checkColision() {
-	colided := game.player.CheckColision(game.ghost.entity.colider)
-	if colided {
+	if game.player.CheckColision(game.ghost.entity.colider) {
 		game.player.entity.alive = false
 		game.gameOver = true
+		return
+	}
+	for idx, dot := range game.dots {
+		if game.player.CheckColision(dot.entity.colider) {
+			game.player.AddPoints(dot.points)
+			game.dots = append(game.dots[:idx], game.dots[idx+1:]...)
+		}
 	}
 }
 
 func (game *Game) Update() error {
-	game.count += 1
-	game.player.Update(*game.board)
-	game.ghost.Update(*game.board)
-	game.checkColision()
+	if !game.gameOver {
+		game.count += 1
+		game.player.Update(*game.board)
+		game.ghost.Update(*game.board)
+		game.checkColision()
+	}
 	return nil
 }
 
 func (game *Game) Draw(screen *ebiten.Image) {
 	game.board.Draw(screen)
+	for _, dot := range game.dots {
+		dot.entity.Draw(screen, game.count, DotFrameCount)
+	}
+	game.ghost.Draw(screen, game.count)
 	if !game.gameOver {
 		game.player.Draw(screen, game.count)
-		game.ghost.Draw(screen, game.count)
 	}
 }
 

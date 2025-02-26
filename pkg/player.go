@@ -17,11 +17,10 @@ type Player struct {
 
 	nextDirection Direction
 
-	score int32
+	score int
 }
 
 func NewPlayer(position Vector) *Player {
-	fmt.Println(position)
 	player := &Player{
 		entity:        NewEntity(position, assets.PacmanImage, InitialPacmanSpeed),
 		nextDirection: NO,
@@ -88,4 +87,9 @@ func (player Player) canChangeDirection(direction Direction, board Board) bool {
 		return board.GetTileTypeAtPosition(*NewVector(player.entity.centre.X-TileSize, player.entity.centre.Y)) != WALL
 	}
 	return false
+}
+
+func (player *Player) AddPoints(points int) {
+	player.score += points
+	fmt.Println(player.score)
 }
