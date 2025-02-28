@@ -1,8 +1,14 @@
 package pkg
 
 import (
+	"bytes"
+	"fmt"
+	"image/color"
+
 	"github.com/BognaLew/Pacman/assets"
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/examples/resources/fonts"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
 )
 
 const (
@@ -12,6 +18,8 @@ const (
 
 type Game struct {
 	board *Board
+
+	source *text.GoTextFaceSource
 
 	player *Player
 	ghost  *Ghost
@@ -24,8 +32,16 @@ type Game struct {
 func NewGame() *Game {
 	board := NewBoard()
 	dots := board.PrepareBoard()
+
+	s, err := text.NewGoTextFaceSource(bytes.NewReader(fonts.MPlus1pRegular_ttf))
+	if err != nil {
+		panic(err)
+	}
+	source := s
+
 	game := &Game{
 		board:    board,
+		source:   source,
 		player:   NewPlayer(*board.pacmanSpawn.position.Multiply(32)),
 		ghost:    NewGhost(board.ghostSpawnPositions[0], assets.BlinkyImage),
 		dots:     dots,
@@ -48,6 +64,9 @@ func (game *Game) checkColision() {
 			game.dots = append(game.dots[:idx], game.dots[idx+1:]...)
 		}
 	}
+	if len(game.dots) == 0 {
+		game.gameOver = true
+	}
 }
 
 func (game *Game) Update() error {
@@ -60,14 +79,31 @@ func (game *Game) Update() error {
 	return nil
 }
 
+func (game *Game) drawText(screen *ebiten.Image, msg string, position Vector, fontSize float64) {
+	op := &text.DrawOptions{}
+	op.GeoM.Translate(position.X, position.Y)
+	op.ColorScale.ScaleWithColor(color.White)
+	text.Draw(screen, msg, &text.GoTextFace{
+		Source: game.source,
+		Size:   fontSize,
+	}, op)
+}
+
 func (game *Game) Draw(screen *ebiten.Image) {
 	game.board.Draw(screen)
+	game.drawText(screen, fmt.Sprintf("Score: %d", game.player.score), *NewVector(10, 5), 22)
 	for _, dot := range game.dots {
 		dot.entity.Draw(screen, game.count, DotFrameCount)
 	}
 	game.ghost.Draw(screen, game.count)
 	if !game.gameOver {
 		game.player.Draw(screen, game.count)
+	} else {
+		var msg string
+		if msg = "Game Over"; game.player.entity.alive {
+			msg = "You won!"
+		}
+		game.drawText(screen, msg, *NewVector(170, 260), 40)
 	}
 }
 

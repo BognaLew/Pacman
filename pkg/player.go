@@ -1,8 +1,6 @@
 package pkg
 
 import (
-	"fmt"
-
 	"github.com/BognaLew/Pacman/assets"
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -91,5 +89,4 @@ func (player Player) canChangeDirection(direction Direction, board Board) bool {
 
 func (player *Player) AddPoints(points int) {
 	player.score += points
-	fmt.Println(player.score)
 }
